@@ -50,17 +50,18 @@ def pdf_or_image_to_json(file_path):
     # print(list_data)
     
     # Process the extracted text as needed
-    processed_text = list_data # Example: removing leading/trailing whitespaces
+    # processed_text = list_data # Example: removing leading/trailing whitespaces
     
     json_format = into_json_format(first_row_text, list_data)
-    print(json_format)
-    # Convert processed text to JSON payload
-    json_payload = {'data_from_pdf': first_row_text, 'text': processed_text}
+    # print(json_format)
     
-    # Convert dictionary to JSON string
-    json_string = json.dumps(json_payload)
+    # # Convert processed text to JSON payload
+    # json_payload = {'data_from_pdf': first_row_text, 'text': processed_text}
     
-    return json_string
+    # # Convert dictionary to JSON string
+    # json_string = json.dumps(json_payload)
+    # print(type(json_format))
+    return json_format
 
 def extract_first_row(page):
     first_row_text = []
@@ -75,9 +76,8 @@ def into_json_format(key_texts, list_data):
     key = key_texts
     data = list_data
     json_format = []    
-    
-    for data_ in data:
         
+    for data_ in data:        
         if len(key) == len(data_):
             items = json.loads("{}")
             for index in range(len(key)):
@@ -85,13 +85,17 @@ def into_json_format(key_texts, list_data):
             json_format.append(items)  
         else:
             print("size of header is not equal to size of data") 
-    json_data = json.dumps(json_format)
-    # print(test)                 
+    json_data = json.dumps(json_format) 
+    # print(type(json_data))   
     
     return json_data
             
+def main():
+    # Example usage
+    file_path = 'test_pdf.pdf'  # Replace with your file path
+    json_data = pdf_or_image_to_json(file_path)
+    json_data = json.loads(json_data)
+# print(json_data[0].keys())
 
-# Example usage
-file_path = 'test_pdf.pdf'  # Replace with your file path
-json_data = pdf_or_image_to_json(file_path)
-# print(json_data)
+if __name__=="__main__": 
+    main() 
