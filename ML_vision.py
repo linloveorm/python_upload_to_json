@@ -1,17 +1,20 @@
+# ML_vision.py
+import io
+import json
 import fitz  # PyMuPDF
 import pytesseract
-import json
+from PIL import Image
+import sys
 
-def pdf_or_image_to_json(file_path):
-    # Initialize empty text variable
-    
+
+def pdf_or_image_to_json(file_bytes):
     list_data = []  # List to store the text of the first row on each page
     first_row_text = []
-    
+
     # Check if the input file is a PDF or an image
-    if file_path.endswith('.pdf'):
+    if file_bytes.startswith(b'%PDF'):  # Check if the bytes data represents a PDF
         # Open the PDF file
-        with fitz.open(file_path) as pdf_document:
+        with fitz.open(stream=io.BytesIO(file_bytes)) as pdf_document:
             # Iterate through each page of the PDF
             for page_number in range(len(pdf_document)):
                 page = pdf_document.load_page(page_number)
@@ -39,29 +42,20 @@ def pdf_or_image_to_json(file_path):
                         list_data_in_line.append(text[0])
                     
                     list_data.append(list_data_in_line)
-                    
-    elif file_path.endswith('.png'):
-        # For PNG image
-        text = pytesseract.image_to_string(file_path)
+        # json_format = into_json_format(first_row_text, list_data)
     else:
-        print("Unsupported file format.")
-        return
+        # For other formats assuming it's an image (e.g., PNG)
+        text = pytesseract.image_to_string(Image.open(io.BytesIO(file_bytes)))
+        data_list = text.split('\n')
+        data_list = list(filter(lambda item: item, data_list))
+        first_row_text = data_list[0].split(' ')
+        
+        list_data = [data_list[i].split(' ') for i in range(1, len(data_list))]
+        print(list_data)
+
+    json_format, error_data = into_json_format(first_row_text, list_data)
     
-    # print(list_data)
-    
-    # Process the extracted text as needed
-    # processed_text = list_data # Example: removing leading/trailing whitespaces
-    
-    json_format = into_json_format(first_row_text, list_data)
-    # print(json_format)
-    
-    # # Convert processed text to JSON payload
-    # json_payload = {'data_from_pdf': first_row_text, 'text': processed_text}
-    
-    # # Convert dictionary to JSON string
-    # json_string = json.dumps(json_payload)
-    # print(type(json_format))
-    return json_format
+    return json_format, error_data
 
 def extract_first_row(page):
     first_row_text = []
@@ -76,6 +70,7 @@ def into_json_format(key_texts, list_data):
     key = key_texts
     data = list_data
     json_format = []    
+    error_data = []
         
     for data_ in data:        
         if len(key) == len(data_):
@@ -84,18 +79,28 @@ def into_json_format(key_texts, list_data):
                 items[key[index]] = data_[index]
             json_format.append(items)  
         else:
+            error_data.append(data_)
+            # print(data_ )
             print("size of header is not equal to size of data") 
     json_data = json.dumps(json_format) 
-    # print(type(json_data))   
+    # print(json_data)  
     
-    return json_data
+    return json_data, error_data
             
-def main():
-    # Example usage
-    file_path = 'test_pdf.pdf'  # Replace with your file path
-    json_data = pdf_or_image_to_json(file_path)
+def main(file_path):
+    # file_path = "e:/python_uploadto_json/test_pdf_Page_1.png"
+    json_data, error_data = pdf_or_image_to_json(file_path)
     json_data = json.loads(json_data)
-# print(json_data[0].keys())
+    # print(error_data)
+    # Print the keys of the first JSON object
+    # print(json_data[0].keys())
+    
+    # Pass json_data as a command-line argument
+    # print(json_data)  # Print for verification
+    return json_data, error_data
 
-if __name__=="__main__": 
-    main() 
+if __name__ == "__main__":
+    # main()
+    if len(sys.argv) > 1:
+        json_data = main(sys.argv[1])
+        # print(json_data)  # Print for verification
